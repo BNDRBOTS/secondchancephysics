@@ -7,7 +7,7 @@
     <style>
         /* =========================================================
            [01] CORE ARCHITECTURE & EXACTING CONTAINMENT
-           Absolute zero-scroll. Prevents all elastic bouncing on iOS/Android.
+           Absolute zero-scroll. Prevents all elastic bouncing.
            ========================================================= */
         :root {
             --void: #020204;
@@ -39,8 +39,11 @@
             overscroll-behavior: none; 
             touch-action: none; 
             -webkit-font-smoothing: antialiased;
+            
+            /* MOBILE APP LOCK: Kills magnifying glass, highlight, and save dialogs */
             -webkit-user-select: none; 
             user-select: none;
+            -webkit-touch-callout: none;
         }
 
         /* =========================================================
@@ -55,11 +58,11 @@
             height: 100dvh;
             z-index: 1;
             display: block;
+            -webkit-touch-callout: none; /* Secondary enforcement for iOS Safari */
         }
 
         /* =========================================================
            [03] UI HUD (Heads Up Display)
-           Floats above the canvas. Uses Safe Area Insets for hardware avoidance.
            ========================================================= */
         #hud {
             position: fixed;
@@ -72,7 +75,11 @@
             display: grid;
             grid-template-rows: auto 1fr auto;
             grid-template-columns: 100%;
-            padding: max(1.5rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
+            /* PREMIUM MOBILE OFFSET: Guarantees UI floats gracefully above hardware notches/bars */
+            padding-top: max(1.5rem, env(safe-area-inset-top));
+            padding-right: max(1.5rem, env(safe-area-inset-right));
+            padding-left: max(1.5rem, env(safe-area-inset-left));
+            padding-bottom: calc(env(safe-area-inset-bottom) + 1.25rem);
         }
 
         .interactive {
@@ -81,7 +88,6 @@
 
         /* =========================================================
            [04] THE COMET-TAIL LEDGER (Top Right)
-           Zero-footprint. Elements exist only when necessary.
            ========================================================= */
         .top-bar {
             display: flex;
@@ -158,9 +164,9 @@
             font-weight: 500;
             color: #E0E0E0;
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
             transform-origin: right center;
-            /* Animation applied in JS to control the comet-tail scale/opacity */
+            /* GPU EXCLUSIVE TRANSITION: Eliminates micro-stutters on mobile devices */
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .log-orb {
@@ -168,7 +174,6 @@
             height: 10px;
             border-radius: 50%;
             flex-shrink: 0;
-            /* Box shadow dynamically injected via JS for intense glow */
         }
 
         .log-text {
@@ -208,7 +213,8 @@
             opacity: 0;
             pointer-events: none;
             transform: translateY(20px) scale(0.95);
-            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            /* GPU EXCLUSIVE TRANSITION */
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
             max-width: 600px;
             width: 90%;
         }
@@ -250,6 +256,7 @@
             border: 1px solid var(--glass-edge);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+            flex-wrap: nowrap;
         }
 
         button {
@@ -265,6 +272,9 @@
             transition: all 0.2s ease;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            /* MOBILE PREVENTION: Stops narrow screens from breaking text inside pills */
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         button.primary {
@@ -286,7 +296,7 @@
             transform: scale(0.95);
         }
 
-        /* Mobile Adjustments */
+        /* Mobile Layout Adjustments */
         @media (max-width: 768px) {
             #toast { flex-direction: column; text-align: center; gap: 1.5rem; border-radius: 32px; padding: 2rem 1.5rem; }
             .toast-actions { width: 100%; justify-content: stretch; }
@@ -308,7 +318,6 @@
                     <span class="info-title">Global Entropy</span>
                     <span class="entropy-meter"><span id="entropy-val">1.00</span>x</span>
                 </div>
-                <!-- Zero-footprint container -->
                 <div id="log-list" class="interactive"></div>
             </div>
         </div>
@@ -337,7 +346,7 @@
  * SECOND CHANCE PHYSICS - V3 (Premium Flux Architecture)
  * Engine: Custom Zero-Dependency ES6
  * Frame-rate Independent Physics Math (dt)
- * HUD: "Comet Tail" Ephemeral UI
+ * Mobile App Lock: Strict context/pointer suppression
  */
 
 const App = (() => {
@@ -388,6 +397,10 @@ const App = (() => {
     };
     window.addEventListener('resize', resize);
     if(window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+
+    // --- OS-LEVEL CONTEXT MENU PREVENTION ---
+    // Critical for iOS/Android: Prevents "Save Image" popup when long-pressing canvas
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
     // --- THE WALKTHROUGH TOAST ---
     const Walkthrough = (() => {
@@ -455,7 +468,6 @@ const App = (() => {
                 </div>
             `;
             
-            // Start invisible to allow CSS transition to handle the pop-in
             div.style.opacity = '0';
             div.style.transform = 'scale(0.95) translateX(10px)';
             elLogList.prepend(div);
@@ -463,7 +475,6 @@ const App = (() => {
             // Force reflow
             void div.offsetWidth;
 
-            // Apply "Comet Tail" cascading styles
             const children = Array.from(elLogList.children);
             children.forEach((child, index) => {
                 if (index === 0) {
@@ -476,7 +487,6 @@ const App = (() => {
                     child.style.opacity = '0.25';
                     child.style.transform = 'scale(0.9) translateX(0)';
                 } else {
-                    // Evaporate old memories
                     child.style.opacity = '0';
                     child.style.transform = 'scale(0.8) translateX(20px)';
                     setTimeout(() => { if(child.parentNode) child.remove(); }, 500);
@@ -657,7 +667,6 @@ const App = (() => {
                         const midpointX = a.x + (dx / 2);
                         const midpointY = a.y + (dy / 2);
                         
-                        // ID formatting for telemetry
                         const pairIds = `[${MathUtils.padId(a.id)} × ${MathUtils.padId(b.id)}]`;
 
                         if (timesMet === 1) {
@@ -717,7 +726,6 @@ const App = (() => {
 
         world.entropy += world.entropyGrowthRate * dt;
         
-        // Update Entropy Pill UI & Glow
         elEntropyVal.innerText = world.entropy.toFixed(2);
         let activeColor = colors.neutral;
         if (world.entropy > 2.5) activeColor = colors.stage1;
