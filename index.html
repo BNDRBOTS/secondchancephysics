@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Second Chance Physics</title>
+    <style>
+        /* =========================================================
+           [01] CORE ARCHITECTURE & EXACTING CONTAINMENT
+           Absolute zero-scroll. Prevents all elastic bouncing on iOS/Android.
+           ========================================================= */
+        :root {
+            --void: #020204;
+            --glass-base: rgba(10, 10, 15, 0.25);
+            --glass-edge: rgba(255, 255, 255, 0.08);
+            --text-bright: #FFFFFF;
+            --text-dim: #7A7A8C;
+            
+            /* The Memory Colors */
+            --stage-1: #FF2A6D; /* Kinetic Transfer - Neon Pink */
+            --stage-2: #05D9E8; /* Resonance Pass - Electric Cyan */
+            --stage-3: #FFC000; /* Repulsion Surge - Warning Gold */
+            
+            --font-stack: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+            --font-mono: "SF Mono", ui-monospace, Menlo, Monaco, monospace;
+            --radius-pill: 100px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100vw;
+            height: 100dvh; 
+            min-height: -webkit-fill-available;
+            background-color: var(--void);
+            font-family: var(--font-stack);
+            color: var(--text-bright);
+            overflow: hidden;
+            overscroll-behavior: none; 
+            touch-action: none; 
+            -webkit-font-smoothing: antialiased;
+            -webkit-user-select: none; 
+            user-select: none;
+        }
+
+        /* =========================================================
+           [02] THE CANVAS STAGE
+           Hardware accelerated, covering the exact viewport.
+           ========================================================= */
+        #stage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            z-index: 1;
+            display: block;
+        }
+
+        /* =========================================================
+           [03] UI HUD (Heads Up Display)
+           Floats above the canvas. Uses Safe Area Insets for hardware avoidance.
+           ========================================================= */
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            z-index: 2;
+            pointer-events: none;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            grid-template-columns: 100%;
+            padding: max(1.5rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* =========================================================
+           [04] THE COMET-TAIL LEDGER (Top Right)
+           Zero-footprint. Elements exist only when necessary.
+           ========================================================= */
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-start;
+        }
+
+        #infobox {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 1rem;
+            width: 100%;
+            max-width: 340px;
+            transform: translateY(-10px);
+            opacity: 0;
+            animation: dropIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.2s;
+        }
+
+        @keyframes dropIn {
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .entropy-pill {
+            background: rgba(5, 5, 8, 0.5);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-edge);
+            border-radius: var(--radius-pill);
+            padding: 0.6rem 1.25rem;
+            display: flex;
+            align-items: baseline;
+            gap: 0.75rem;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        .info-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--text-dim);
+            font-weight: 700;
+        }
+
+        .entropy-meter {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-bright);
+            font-weight: 600;
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+            transition: color 0.4s ease, text-shadow 0.4s ease;
+        }
+
+        #log-list {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .log-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(10, 10, 15, 0.4);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-pill);
+            padding: 0.4rem 1rem 0.4rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #E0E0E0;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            transform-origin: right center;
+            /* Animation applied in JS to control the comet-tail scale/opacity */
+        }
+
+        .log-orb {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            /* Box shadow dynamically injected via JS for intense glow */
+        }
+
+        .log-text {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .log-id {
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* =========================================================
+           [05] WALKTHROUGH TOAST (Center)
+           ========================================================= */
+        .center-stage {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 2rem;
+        }
+
+        #toast {
+            background: rgba(15, 15, 20, 0.85);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-edge);
+            padding: 1.5rem 2rem;
+            border-radius: var(--radius-pill);
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            box-shadow: 0 32px 64px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.15);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        #toast.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+
+        .toast-msg {
+            font-size: 1rem;
+            line-height: 1.4;
+            color: var(--text-bright);
+            font-weight: 400;
+            flex: 1;
+        }
+
+        .toast-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        /* =========================================================
+           [06] CONTROLS (Bottom)
+           ========================================================= */
+        .bottom-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            background: rgba(0,0,0,0.5);
+            padding: 0.5rem;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--glass-edge);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        button {
+            background: transparent;
+            border: none;
+            color: var(--text-bright);
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        button.primary {
+            background: var(--text-bright);
+            color: var(--void);
+        }
+
+        @media (hover: hover) {
+            button:hover {
+                transform: scale(1.05);
+                background: rgba(255,255,255,0.1);
+            }
+            button.primary:hover {
+                background: #E0E0FF;
+            }
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            #toast { flex-direction: column; text-align: center; gap: 1.5rem; border-radius: 32px; padding: 2rem 1.5rem; }
+            .toast-actions { width: 100%; justify-content: stretch; }
+            .toast-actions button { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Stage -->
+    <canvas id="stage"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+        
+        <div class="top-bar">
+            <div id="infobox">
+                <div class="entropy-pill interactive">
+                    <span class="info-title">Global Entropy</span>
+                    <span class="entropy-meter"><span id="entropy-val">1.00</span>x</span>
+                </div>
+                <!-- Zero-footprint container -->
+                <div id="log-list" class="interactive"></div>
+            </div>
+        </div>
+
+        <div class="center-stage">
+            <div id="toast" class="interactive">
+                <div class="toast-msg" id="toast-text">Loading reality...</div>
+                <div class="toast-actions">
+                    <button id="btn-skip" style="color: var(--text-dim);">Skip</button>
+                    <button id="btn-next" class="primary">Next</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-bar">
+            <div class="btn-group interactive">
+                <button id="btn-drop">Inject Entity</button>
+                <button id="btn-reset">Purge Reality</button>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+/**
+ * SECOND CHANCE PHYSICS - V3 (Premium Flux Architecture)
+ * Engine: Custom Zero-Dependency ES6
+ * Frame-rate Independent Physics Math (dt)
+ * HUD: "Comet Tail" Ephemeral UI
+ */
+
+const App = (() => {
+    // --- DOM BINDINGS ---
+    const canvas = document.getElementById('stage');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const elLogList = document.getElementById('log-list');
+    const elEntropyVal = document.getElementById('entropy-val');
+
+    // --- WORLD STATE ---
+    const world = {
+        width: 0,
+        height: 0,
+        dpr: 1,
+        shapes: [],
+        particles: [],
+        lines: [],
+        shapeCounter: 1,
+        entropy: 1.0,           
+        entropyGrowthRate: 0.0005, 
+        draggedShape: null,
+        pointerX: 0,
+        pointerY: 0,
+        activePointerId: null
+    };
+
+    const colors = {
+        bg: '#020205',
+        stage1: '#FF2A6D', 
+        stage2: '#05D9E8', 
+        stage3: '#FFC000', 
+        neutral: '#FFFFFF'
+    };
+
+    // --- HARDWARE-ACCURATE RESIZING ---
+    const resize = () => {
+        world.width = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+        world.height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        world.dpr = window.devicePixelRatio || 1;
+        
+        canvas.width = world.width * world.dpr;
+        canvas.height = world.height * world.dpr;
+        
+        canvas.style.width = `${world.width}px`;
+        canvas.style.height = `${world.height}px`;
+        
+        ctx.scale(world.dpr, world.dpr);
+    };
+    window.addEventListener('resize', resize);
+    if(window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+
+    // --- THE WALKTHROUGH TOAST ---
+    const Walkthrough = (() => {
+        const toast = document.getElementById('toast');
+        const text = document.getElementById('toast-text');
+        const btnNext = document.getElementById('btn-next');
+        const btnSkip = document.getElementById('btn-skip');
+        
+        const script = [
+            "Welcome. These entities remember each other. Watch what happens when they intersect.",
+            "Their first collision is a gentle kinetic transfer. A simple introduction.",
+            "The second time, they recognize one another. They accelerate and pass straight through.",
+            "The third time? Total rejection. They repel violently.",
+            "Notice the 'Global Entropy' meter above. As time passes, the energy in this closed system continuously rises. Try injecting more entities."
+        ];
+        
+        let step = 0;
+
+        const init = () => {
+            if (localStorage.getItem('scp_seen') === 'true') return;
+            text.innerText = script[step];
+            toast.classList.add('active');
+        };
+
+        const close = () => {
+            toast.style.opacity = ''; 
+            toast.style.pointerEvents = 'none'; 
+            toast.classList.remove('active');
+            localStorage.setItem('scp_seen', 'true');
+        };
+
+        const next = () => {
+            step++;
+            if (step >= script.length) {
+                close();
+            } else {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    text.innerText = script[step];
+                    if (step === script.length - 1) {
+                        btnNext.innerText = "Begin";
+                        btnSkip.style.display = "none";
+                    }
+                    toast.style.opacity = '1';
+                }, 300);
+            }
+        };
+
+        btnNext.addEventListener('click', next);
+        btnSkip.addEventListener('click', close);
+
+        return { init };
+    })();
+
+    // --- COMET TAIL TELEMETRY LOGGER ---
+    const Logger = {
+        log: (ids, actionName, colorHex) => {
+            const div = document.createElement('div');
+            div.className = 'log-item';
+            div.innerHTML = `
+                <div class="log-orb" style="background: ${colorHex}; box-shadow: 0 0 16px ${colorHex}"></div>
+                <div class="log-text">
+                    <span class="log-id">${ids}</span>
+                    <span style="color: ${colorHex};">${actionName}</span>
+                </div>
+            `;
+            
+            // Start invisible to allow CSS transition to handle the pop-in
+            div.style.opacity = '0';
+            div.style.transform = 'scale(0.95) translateX(10px)';
+            elLogList.prepend(div);
+
+            // Force reflow
+            void div.offsetWidth;
+
+            // Apply "Comet Tail" cascading styles
+            const children = Array.from(elLogList.children);
+            children.forEach((child, index) => {
+                if (index === 0) {
+                    child.style.opacity = '1';
+                    child.style.transform = 'scale(1) translateX(0)';
+                } else if (index === 1) {
+                    child.style.opacity = '0.6';
+                    child.style.transform = 'scale(0.95) translateX(0)';
+                } else if (index === 2) {
+                    child.style.opacity = '0.25';
+                    child.style.transform = 'scale(0.9) translateX(0)';
+                } else {
+                    // Evaporate old memories
+                    child.style.opacity = '0';
+                    child.style.transform = 'scale(0.8) translateX(20px)';
+                    setTimeout(() => { if(child.parentNode) child.remove(); }, 500);
+                }
+            });
+        }
+    };
+
+    // --- MATH & PHYSICS UTILS ---
+    const MathUtils = {
+        rand: (min, max) => Math.random() * (max - min) + min,
+        dist: (dx, dy) => Math.hypot(dx, dy) || 0.0001,
+        padId: (id) => String(id).padStart(2, '0')
+    };
+
+    // --- ENTITIES ---
+    class Shape {
+        constructor(x, y) {
+            this.id = world.shapeCounter++;
+            this.x = x;
+            this.y = y;
+            this.vx = MathUtils.rand(-2, 2);
+            this.vy = MathUtils.rand(-2, 2);
+            this.radius = MathUtils.rand(18, 28);
+            this.memory = {}; 
+            this.color = colors.neutral;
+            this.glow = 0;
+            this.trail = []; 
+        }
+
+        update(dt) {
+            this.x += this.vx * dt;
+            this.y += this.vy * dt;
+            
+            const frictionTarget = Math.min(0.995 + (world.entropy * 0.001), 1.0);
+            const friction = Math.pow(frictionTarget, dt); 
+            
+            this.vx *= friction;
+            this.vy *= friction;
+
+            if (world.entropy > 1.5) {
+                this.vx += MathUtils.rand(-0.1, 0.1) * (world.entropy - 1) * dt;
+                this.vy += MathUtils.rand(-0.1, 0.1) * (world.entropy - 1) * dt;
+            }
+
+            if (this.x - this.radius < 0) { this.x = this.radius; this.vx *= -1; }
+            if (this.x + this.radius > world.width) { this.x = world.width - this.radius; this.vx *= -1; }
+            if (this.y - this.radius < 0) { this.y = this.radius; this.vy *= -1; }
+            if (this.y + this.radius > world.height) { this.y = world.height - this.radius; this.vy *= -1; }
+
+            this.glow = Math.max(0, this.glow - (0.03 * dt));
+
+            this.trail.unshift({ x: this.x, y: this.y });
+            if (this.trail.length > Math.floor(10 * world.entropy)) { 
+                this.trail.pop();
+            }
+        }
+
+        draw(ctx) {
+            if (this.trail.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                for (let i = 1; i < this.trail.length; i++) {
+                    const cx = (this.trail[i].x + this.trail[i-1].x) / 2;
+                    const cy = (this.trail[i].y + this.trail[i-1].y) / 2;
+                    ctx.quadraticCurveTo(this.trail[i-1].x, this.trail[i-1].y, cx, cy);
+                }
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = this.radius * 0.6;
+                ctx.lineCap = 'round';
+                ctx.globalAlpha = 0.15 + (this.glow * 0.2);
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+            }
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 2.5;
+            
+            if (this.glow > 0) {
+                ctx.shadowBlur = 15 * this.glow * world.entropy;
+                ctx.shadowColor = this.color;
+            }
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius * 0.3, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.shadowBlur = 0; 
+        }
+    }
+
+    class Particle {
+        constructor(x, y, color, intensityMultiplier) {
+            this.x = x;
+            this.y = y;
+            const angle = MathUtils.rand(0, Math.PI * 2);
+            const speed = MathUtils.rand(1, 5) * intensityMultiplier * world.entropy;
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+            this.color = color;
+            this.life = 1.0;
+            this.decay = MathUtils.rand(0.02, 0.05);
+        }
+        update(dt) {
+            this.x += this.vx * dt;
+            this.y += this.vy * dt;
+            this.life -= this.decay * dt;
+        }
+        draw(ctx) {
+            if (this.life <= 0) return;
+            ctx.globalAlpha = this.life;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 2 * this.life, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    // --- PHYSICS & MEMORY LOGIC ---
+    const Logic = {
+        addShape: (x, y) => {
+            const sx = x || world.width / 2;
+            const sy = y || 100;
+            world.shapes.push(new Shape(sx, sy));
+        },
+
+        triggerSparks: (x, y, color, amountMultiplier) => {
+            const count = Math.floor(10 * amountMultiplier);
+            for(let i=0; i < count; i++) {
+                world.particles.push(new Particle(x, y, color, amountMultiplier));
+            }
+        },
+
+        processInteractions: () => {
+            world.lines = [];
+            const len = world.shapes.length;
+
+            for (let i = 0; i < len; i++) {
+                for (let j = i + 1; j < len; j++) {
+                    const a = world.shapes[i];
+                    const b = world.shapes[j];
+                    
+                    const dx = b.x - a.x;
+                    const dy = b.y - a.y;
+                    const dist = MathUtils.dist(dx, dy);
+                    const touchDist = a.radius + b.radius;
+
+                    const memoryCount = a.memory[b.id] || 0;
+                    if (memoryCount > 0 && dist < 250) {
+                        world.lines.push({
+                            x1: a.x, y1: a.y, x2: b.x, y2: b.y,
+                            mem: memoryCount, dist: dist
+                        });
+                    }
+
+                    if (dist < touchDist) {
+                        const overlap = touchDist - dist;
+                        const sepX = (dx / dist) * (overlap / 2.01); 
+                        const sepY = (dy / dist) * (overlap / 2.01);
+                        
+                        a.x -= sepX; a.y -= sepY;
+                        b.x += sepX; b.y += sepY;
+
+                        const rvx = b.vx - a.vx;
+                        const rvy = b.vy - a.vy;
+                        const approachSpeed = (rvx * dx + rvy * dy) / dist;
+
+                        if (approachSpeed > 0) continue;
+
+                        const timesMet = (a.memory[b.id] || 0) + 1;
+                        a.memory[b.id] = timesMet;
+                        b.memory[a.id] = timesMet;
+
+                        const midpointX = a.x + (dx / 2);
+                        const midpointY = a.y + (dy / 2);
+                        
+                        // ID formatting for telemetry
+                        const pairIds = `[${MathUtils.padId(a.id)} × ${MathUtils.padId(b.id)}]`;
+
+                        if (timesMet === 1) {
+                            Logic.applyBounce(a, b, dx, dy, dist, approachSpeed, 1.0);
+                            a.color = colors.stage1; b.color = colors.stage1;
+                            Logic.triggerSparks(midpointX, midpointY, colors.stage1, 1);
+                            Logger.log(pairIds, "Kinetic Transfer", colors.stage1);
+
+                        } else if (timesMet === 2) {
+                            const boost = 1.5 + (world.entropy * 0.1);
+                            a.vx *= boost; a.vy *= boost;
+                            b.vx *= boost; b.vy *= boost;
+                            
+                            a.color = colors.stage2; b.color = colors.stage2;
+                            Logic.triggerSparks(midpointX, midpointY, colors.stage2, 1.5);
+                            Logger.log(pairIds, "Resonance Pass", colors.stage2);
+
+                        } else {
+                            const repulsionStrength = 2.5 * world.entropy; 
+                            Logic.applyBounce(a, b, dx, dy, dist, approachSpeed, repulsionStrength);
+                            
+                            a.color = colors.stage3; b.color = colors.stage3;
+                            Logic.triggerSparks(midpointX, midpointY, colors.stage3, 3);
+                            Logger.log(pairIds, "Repulsion Surge", colors.stage3);
+                        }
+
+                        a.glow = 1.0; b.glow = 1.0;
+                    }
+                }
+            }
+        },
+
+        applyBounce: (a, b, dx, dy, dist, approachSpeed, strength) => {
+            const m1 = a.radius;
+            const m2 = b.radius;
+            const impulse = -(1 + strength) * approachSpeed / ((1/m1) + (1/m2));
+            
+            const ix = impulse * (dx / dist);
+            const iy = impulse * (dy / dist);
+
+            a.vx -= ix / m1;
+            a.vy -= iy / m1;
+            b.vx += ix / m2;
+            b.vy += iy / m2;
+        }
+    };
+
+    // --- MASTER RENDER LOOP ---
+    let lastTime = 0;
+
+    const render = (timestamp) => {
+        if (!lastTime) lastTime = timestamp;
+        let dt = (timestamp - lastTime) / 16.666; 
+        lastTime = timestamp;
+
+        if (dt > 3.0) dt = 3.0;
+
+        world.entropy += world.entropyGrowthRate * dt;
+        
+        // Update Entropy Pill UI & Glow
+        elEntropyVal.innerText = world.entropy.toFixed(2);
+        let activeColor = colors.neutral;
+        if (world.entropy > 2.5) activeColor = colors.stage1;
+        else if (world.entropy > 1.5) activeColor = colors.stage3;
+        
+        elEntropyVal.style.color = activeColor;
+        elEntropyVal.style.textShadow = `0 0 12px ${activeColor}`;
+
+        ctx.globalCompositeOperation = 'source-over';
+        const fadeAlpha = Math.max(0.1, 0.4 - (world.entropy * 0.05));
+        ctx.fillStyle = `rgba(2, 2, 4, ${fadeAlpha})`;
+        ctx.fillRect(0, 0, world.width, world.height);
+
+        ctx.globalCompositeOperation = 'screen';
+
+        ctx.lineWidth = 1;
+        world.lines.forEach(line => {
+            const alpha = (1 - (line.dist / 250)) * 0.4;
+            if (line.mem === 1) ctx.strokeStyle = `rgba(255, 42, 109, ${alpha})`;
+            else if (line.mem === 2) ctx.strokeStyle = `rgba(5, 217, 232, ${alpha})`;
+            else ctx.strokeStyle = `rgba(255, 192, 0, ${alpha})`;
+
+            ctx.beginPath();
+            ctx.moveTo(line.x1, line.y1);
+            ctx.lineTo(line.x2, line.y2);
+            ctx.stroke();
+        });
+
+        for (let i = world.particles.length - 1; i >= 0; i--) {
+            const p = world.particles[i];
+            p.update(dt);
+            p.draw(ctx);
+            if (p.life <= 0) world.particles.splice(i, 1);
+        }
+
+        if (world.draggedShape) {
+            const dx = world.pointerX - world.draggedShape.x;
+            const dy = world.pointerY - world.draggedShape.y;
+            world.draggedShape.vx += dx * 0.08 * dt;
+            world.draggedShape.vy += dy * 0.08 * dt;
+        }
+
+        Logic.processInteractions();
+        world.shapes.forEach(shape => {
+            shape.update(dt);
+            shape.draw(ctx);
+        });
+
+        requestAnimationFrame(render);
+    };
+
+    // --- UNIFIED POINTER CONTROLS ---
+    const bindInputs = () => {
+        document.getElementById('btn-drop').addEventListener('click', () => {
+            Logic.addShape(world.width / 2, 60);
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            world.shapes = [];
+            world.particles = [];
+            world.shapeCounter = 1;
+            world.entropy = 1.0; 
+            elLogList.innerHTML = '';
+            for(let i=0; i<3; i++) Logic.addShape();
+        });
+
+        const onPointerDown = (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('#infobox') || e.target.closest('#toast')) return;
+            if (world.activePointerId !== null) return;
+            
+            world.pointerX = e.clientX;
+            world.pointerY = e.clientY;
+            
+            let grabbed = null;
+            let closestDist = Infinity;
+            
+            world.shapes.forEach(shape => {
+                const dist = MathUtils.dist(world.pointerX - shape.x, world.pointerY - shape.y);
+                if (dist < shape.radius * 3 && dist < closestDist) {
+                    grabbed = shape;
+                    closestDist = dist;
+                }
+            });
+            
+            if (grabbed) {
+                world.activePointerId = e.pointerId;
+                world.draggedShape = grabbed;
+                canvas.setPointerCapture(e.pointerId);
+            }
+        };
+
+        const onPointerMove = (e) => {
+            if (world.activePointerId !== null && e.pointerId !== world.activePointerId) return;
+            
+            if (world.draggedShape) {
+                world.pointerX = e.clientX;
+                world.pointerY = e.clientY;
+            }
+        };
+
+        const onPointerUp = (e) => {
+            if (e.pointerId === world.activePointerId) {
+                canvas.releasePointerCapture(e.pointerId);
+                world.activePointerId = null;
+                world.draggedShape = null;
+            }
+        };
+
+        window.addEventListener('pointerdown', onPointerDown);
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+        
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) lastTime = 0; 
+        });
+    };
+
+    // --- BOOT SEQUENCE ---
+    return {
+        ignite: () => {
+            resize();
+            bindInputs();
+            
+            for(let i=0; i<4; i++) {
+                Logic.addShape(
+                    MathUtils.rand(100, world.width - 100), 
+                    MathUtils.rand(100, world.height - 100)
+                );
+            }
+            
+            requestAnimationFrame(render);
+            setTimeout(Walkthrough.init, 1500);
+        }
+    };
+})();
+
+// Execution
+window.onload = App.ignite;
+
+</script>
+</body>
+</html>
