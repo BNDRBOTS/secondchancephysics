@@ -1,30 +1,39 @@
+/styles.css
+===============================================================
 /* ============================================================
    DESIGN TOKENS – All colours defined here; zero hardcoded hex outside
    ============================================================ */
 :root {
+  /* Dominant & surface colours */
   --bg: #020204;
   --bg-rgb: 2, 2, 4;
   --bg-surface: #0c0c14;
-
-  --accent-1: #FF2A6D;
+  
+  /* Accents */
+  --accent-1: #FF2A6D;          /* Kinetic Pink */
   --accent-1-rgb: 255, 42, 109;
-  --accent-2: #05D9E8;
+  --accent-2: #05D9E8;          /* Resonance Cyan */
   --accent-2-rgb: 5, 217, 232;
-
+  
+  /* Text */
   --text-primary: #F0F0F3;
   --text-secondary: #9A9AAC;
-
+  
+  /* Borders & glows */
   --border-glow: rgba(var(--accent-2-rgb), 0.25);
 
+  /* Typography (non‑generic, no banned families) */
   --font-display: 'Syne', sans-serif;
   --font-body: 'Space Mono', monospace;
 
+  /* Explicit 5‑level scale */
   --scale-display: clamp(3rem, 8vw, 5rem);
   --scale-heading: clamp(2rem, 5vw, 3rem);
   --scale-subheading: 1.25rem;
   --scale-body: 1rem;
   --scale-label: 0.75rem;
 
+  /* Spacing: 8px base unit */
   --space-unit: 8px;
   --space-2: calc(var(--space-unit) * 2);
   --space-4: calc(var(--space-unit) * 4);
@@ -32,12 +41,13 @@
   --space-8: calc(var(--space-unit) * 8);
   --space-12: calc(var(--space-unit) * 12);
 
+  /* Motion */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-smooth: cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 /* ============================================================
-   BASE – Dense multi‑layer noise, grain, and moving gradients
+   BASE & BACKGROUND – Multi‑stop gradient + noise, no flat solid
    ============================================================ */
 * {
   margin: 0;
@@ -57,45 +67,16 @@ body {
   overflow-x: hidden;
 }
 
-/* Primary noise & gradient layer */
+/* Generative background (no solid colour) */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -2;
-  background:
-    /* energetic radial orbs */
-    radial-gradient(ellipse 80% 50% at 20% 30%, rgba(var(--accent-1-rgb), 0.18) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 70% at 80% 70%, rgba(var(--accent-2-rgb), 0.14) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(var(--accent-1-rgb), 0.06) 0%, transparent 100%),
-    /* dense grain (higher opacity) */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E") repeat;
-  animation: driftGradient 20s ease-in-out infinite alternate;
-}
-
-/* Secondary geometric pattern layer */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
   z-index: -1;
-  opacity: 0.3;
   background:
-    /* micro‑dot grid for texture */
-    radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    repeating-conic-gradient(rgba(var(--accent-2-rgb), 0.02) 0% 25%, transparent 0% 50%) 50% / 30px 30px;
-  animation: shimmer 15s linear infinite;
-}
-
-@keyframes driftGradient {
-  0% { background-position: 0% 0%, 0% 0%; }
-  100% { background-position: 10% 5%, -5% -10%; }
-}
-
-@keyframes shimmer {
-  0% { transform: rotate(0deg) scale(1); opacity: 0.3; }
-  50% { transform: rotate(1deg) scale(1.02); opacity: 0.45; }
-  100% { transform: rotate(0deg) scale(1); opacity: 0.3; }
+    radial-gradient(ellipse at 70% 50%, rgba(var(--accent-1-rgb), 0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 30% 80%, rgba(var(--accent-2-rgb), 0.12) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E") repeat;
 }
 
 /* ============================================================
@@ -131,7 +112,7 @@ p, li {
 }
 
 /* ============================================================
-   FOCUS
+   FOCUS – visible, never removed
    ============================================================ */
 :focus-visible {
   outline: 2px solid var(--accent-2);
@@ -151,7 +132,7 @@ p, li {
 }
 
 /* ============================================================
-   NAV
+   NAV – glass effect
    ============================================================ */
 .nav {
   position: sticky;
@@ -197,7 +178,7 @@ p, li {
 }
 
 /* ============================================================
-   HERO – asymmetric with overlapping preview, active verbs
+   HERO – asymmetric 2‑column, 5th‑grade language, active verbs
    ============================================================ */
 .hero {
   display: grid;
@@ -207,7 +188,6 @@ p, li {
   min-height: 90vh;
   padding: var(--space-12) var(--space-8);
   position: relative;
-  overflow: hidden;
 }
 .hero-text {
   max-width: 600px;
@@ -255,50 +235,31 @@ p, li {
   box-shadow: 0 0 16px rgba(var(--accent-2-rgb), 0.3);
 }
 
-/* Hero preview with chaotic clip-path and layered glow */
+/* Floating iframe preview – non‑standard clip‑path */
 .hero-preview {
   position: relative;
   justify-self: center;
   width: 100%;
   max-width: 420px;
   aspect-ratio: 9 / 16;
-  filter: drop-shadow(0 0 30px rgba(var(--accent-2-rgb), 0.3));
 }
 .preview-frame {
   width: 100%;
   height: 100%;
-  clip-path: polygon(4% 0, 100% 8%, 94% 100%, 0% 92%);
+  clip-path: polygon(4% 0, 100% 6%, 96% 100%, 0 94%);
   background: var(--bg-surface);
   border: 1px solid var(--border-glow);
   overflow: hidden;
-  transition: clip-path 0.4s var(--ease-spring);
+  box-shadow: 0 20px 60px rgba(var(--accent-2-rgb), 0.15);
+  transition: clip-path 0.3s var(--ease-spring);
 }
 .preview-frame:hover {
-  clip-path: polygon(0% 1%, 100% 3%, 100% 99%, 0% 97%);
+  clip-path: polygon(0 2%, 100% 2%, 100% 98%, 0 98%);
 }
 .preview-frame iframe {
   width: 100%;
   height: 100%;
   border: none;
-}
-
-/* Diagonal noise slash behind preview for extra texture */
-.hero-preview::before {
-  content: "";
-  position: absolute;
-  top: -30%;
-  left: -30%;
-  width: 160%;
-  height: 160%;
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(var(--accent-2-rgb), 0.04) 0px,
-    rgba(var(--accent-2-rgb), 0.04) 1px,
-    transparent 1px,
-    transparent 20px
-  );
-  pointer-events: none;
-  z-index: -1;
 }
 
 /* ============================================================
@@ -307,7 +268,6 @@ p, li {
 .demo {
   padding: var(--space-12) var(--space-8);
   text-align: center;
-  position: relative;
 }
 .section-title {
   margin-bottom: var(--space-2);
@@ -323,7 +283,7 @@ p, li {
   border: 1px solid var(--border-glow);
   border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 24px 48px rgba(0,0,0,0.6), 0 0 40px rgba(var(--accent-2-rgb), 0.15);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.6);
 }
 .demo-iframe {
   width: 100%;
@@ -338,25 +298,11 @@ p, li {
   text-decoration: underline;
 }
 
-/* Background dynamic line art for demo area */
-.demo::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at 20% 80%, rgba(var(--accent-1-rgb), 0.08) 0%, transparent 50%),
-              radial-gradient(circle at 80% 20%, rgba(var(--accent-2-rgb), 0.06) 0%, transparent 50%);
-  z-index: -1;
-}
-
 /* ============================================================
-   FEATURES – zigzag with visual noise accents
+   FEATURES – zigzag layout, only real features from app.html
    ============================================================ */
 .features {
   padding: var(--space-12) var(--space-8);
-  position: relative;
 }
 .feature-list {
   display: flex;
@@ -368,7 +314,6 @@ p, li {
   grid-template-columns: 1fr 1fr;
   gap: var(--space-8);
   align-items: center;
-  position: relative;
 }
 .feature-item.reverse {
   direction: rtl;
@@ -376,18 +321,12 @@ p, li {
 .feature-item.reverse .feature-text {
   direction: ltr;
 }
-
-/* Visual orb – chaotic noise inside */
 .feature-visual {
   width: 100%;
   aspect-ratio: 1;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(var(--accent-2-rgb), 0.2) 0%, transparent 50%),
-    radial-gradient(circle at 70% 70%, rgba(var(--accent-1-rgb), 0.15) 0%, transparent 50%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23g)' opacity='0.08'/%3E%3C/svg%3E") repeat;
+  background: radial-gradient(circle at center, rgba(var(--accent-2-rgb), 0.1) 0%, transparent 70%);
   border: 1px solid var(--border-glow);
   border-radius: 50%;
-  box-shadow: inset 0 0 30px rgba(var(--accent-2-rgb), 0.1), 0 0 30px rgba(var(--accent-1-rgb), 0.15);
 }
 .feature-text h3 {
   color: var(--accent-1);
@@ -398,12 +337,11 @@ p, li {
 }
 
 /* ============================================================
-   HOW IT WORKS
+   HOW IT WORKS – max 3 steps
    ============================================================ */
 .how-it-works {
   padding: var(--space-12) var(--space-8);
   text-align: center;
-  position: relative;
 }
 .steps {
   display: flex;
@@ -416,7 +354,6 @@ p, li {
   flex: 1;
   min-width: 220px;
   max-width: 300px;
-  position: relative;
 }
 .step-number {
   display: block;
@@ -430,26 +367,13 @@ p, li {
   font-size: var(--scale-heading);
   line-height: 48px;
   margin: 0 auto var(--space-4);
-  box-shadow: 0 0 20px rgba(var(--accent-2-rgb), 0.5);
 }
 .step h3 {
   color: var(--text-primary);
 }
-/* Connecting lines between steps (diagonal flow) */
-.step:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  top: 30px;
-  right: -20%;
-  width: 40%;
-  height: 1px;
-  background: linear-gradient(90deg, var(--accent-2), transparent);
-  transform: skewX(-15deg);
-  opacity: 0.4;
-}
 
 /* ============================================================
-   PRICING
+   PRICING – real tiers, value‑metric aligned
    ============================================================ */
 .pricing {
   padding: var(--space-12) var(--space-8);
@@ -470,12 +394,10 @@ p, li {
   width: 300px;
   position: relative;
   transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
-  backdrop-filter: blur(10px);
 }
 .pricing-card.featured {
   border-color: var(--accent-1);
   box-shadow: 0 0 30px rgba(var(--accent-1-rgb), 0.15);
-  background: rgba(var(--bg-rgb), 0.8);
 }
 .pricing-card:hover {
   transform: translateY(-8px);
@@ -527,7 +449,7 @@ p, li {
 }
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE – mobile collapses, zero horizontal overflow
    ============================================================ */
 @media (max-width: 768px) {
   .hero {
@@ -549,13 +471,11 @@ p, li {
   .demo-iframe {
     height: 350px;
   }
-  .step:not(:last-child)::after {
-    display: none; /* hide connecting lines on mobile */
-  }
 }
 
 /* ============================================================
-   ANIMATIONS – staggered reveal via Intersection Observer
+   ANIMATIONS – Staggered reveal via Intersection Observer + page load
+   .reveal starts hidden, .visible triggers transition
    ============================================================ */
 .reveal {
   opacity: 0;
