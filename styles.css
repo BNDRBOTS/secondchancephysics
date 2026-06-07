@@ -1,0 +1,486 @@
+/* ============================================================
+   DESIGN TOKENS – All colours defined here; zero hardcoded hex outside
+   ============================================================ */
+:root {
+  /* Dominant & surface colours */
+  --bg: #020204;
+  --bg-rgb: 2, 2, 4;
+  --bg-surface: #0c0c14;
+  
+  /* Accents */
+  --accent-1: #FF2A6D;          /* Kinetic Pink */
+  --accent-1-rgb: 255, 42, 109;
+  --accent-2: #05D9E8;          /* Resonance Cyan */
+  --accent-2-rgb: 5, 217, 232;
+  
+  /* Text */
+  --text-primary: #F0F0F3;
+  --text-secondary: #9A9AAC;
+  
+  /* Borders & glows */
+  --border-glow: rgba(var(--accent-2-rgb), 0.25);
+
+  /* Typography (non‑generic, no banned families) */
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'Space Mono', monospace;
+
+  /* Explicit 5‑level scale */
+  --scale-display: clamp(3rem, 8vw, 5rem);
+  --scale-heading: clamp(2rem, 5vw, 3rem);
+  --scale-subheading: 1.25rem;
+  --scale-body: 1rem;
+  --scale-label: 0.75rem;
+
+  /* Spacing: 8px base unit */
+  --space-unit: 8px;
+  --space-2: calc(var(--space-unit) * 2);
+  --space-4: calc(var(--space-unit) * 4);
+  --space-6: calc(var(--space-unit) * 6);
+  --space-8: calc(var(--space-unit) * 8);
+  --space-12: calc(var(--space-unit) * 12);
+
+  /* Motion */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* ============================================================
+   BASE & BACKGROUND – Multi‑stop gradient + noise, no flat solid
+   ============================================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--scale-body);
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Generative background (no solid colour) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 70% 50%, rgba(var(--accent-1-rgb), 0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 30% 80%, rgba(var(--accent-2-rgb), 0.12) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E") repeat;
+}
+
+/* ============================================================
+   TYPOGRAPHY RULES
+   ============================================================ */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.1;
+}
+h1 {
+  font-size: var(--scale-display);
+  letter-spacing: -0.02em;
+}
+h2 {
+  font-size: var(--scale-heading);
+  letter-spacing: -0.01em;
+}
+h3 {
+  font-size: var(--scale-subheading);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+p, li {
+  font-family: var(--font-body);
+  font-size: var(--scale-body);
+}
+.badge {
+  font-size: var(--scale-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* ============================================================
+   FOCUS – visible, never removed
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 4px;
+}
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  background: var(--accent-1);
+  color: var(--text-primary);
+  padding: var(--space-2);
+  z-index: 100;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* ============================================================
+   NAV – glass effect
+   ============================================================ */
+.nav {
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(var(--bg-rgb), 0.7);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) var(--space-4);
+  z-index: 10;
+}
+.logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--scale-subheading);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.nav ul {
+  display: flex;
+  list-style: none;
+  gap: var(--space-4);
+  align-items: center;
+}
+.nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s var(--ease-smooth);
+}
+.nav a:hover,
+.nav a:focus {
+  color: var(--accent-2);
+}
+.nav-cta {
+  background: var(--accent-1);
+  color: var(--text-primary) !important;
+  padding: var(--space-2) var(--space-4);
+  border-radius: 100px;
+  font-weight: 700;
+}
+
+/* ============================================================
+   HERO – asymmetric 2‑column, 5th‑grade language, active verbs
+   ============================================================ */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: var(--space-8);
+  align-items: center;
+  min-height: 90vh;
+  padding: var(--space-12) var(--space-8);
+  position: relative;
+}
+.hero-text {
+  max-width: 600px;
+}
+.hero-sub {
+  color: var(--text-secondary);
+  margin-top: var(--space-4);
+  font-size: var(--scale-body);
+  line-height: 1.5;
+}
+.hero-buttons {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  flex-wrap: wrap;
+}
+.cta {
+  display: inline-block;
+  padding: var(--space-2) var(--space-6);
+  border-radius: 100px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--scale-body);
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s, letter-spacing 0.2s;
+}
+.primary-cta {
+  background: var(--accent-1);
+  color: var(--text-primary);
+}
+.secondary-cta {
+  background: transparent;
+  border: 1px solid var(--accent-2);
+  color: var(--accent-2);
+}
+.cta:hover {
+  transform: translateY(-2px);
+  letter-spacing: 0.06em;
+}
+.primary-cta:hover {
+  box-shadow: 0 0 24px rgba(var(--accent-1-rgb), 0.5);
+}
+.secondary-cta:hover {
+  box-shadow: 0 0 16px rgba(var(--accent-2-rgb), 0.3);
+}
+
+/* Floating iframe preview – non‑standard clip‑path */
+.hero-preview {
+  position: relative;
+  justify-self: center;
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 9 / 16;
+}
+.preview-frame {
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(4% 0, 100% 6%, 96% 100%, 0 94%);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glow);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(var(--accent-2-rgb), 0.15);
+  transition: clip-path 0.3s var(--ease-spring);
+}
+.preview-frame:hover {
+  clip-path: polygon(0 2%, 100% 2%, 100% 98%, 0 98%);
+}
+.preview-frame iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ============================================================
+   DEMO SECTION
+   ============================================================ */
+.demo {
+  padding: var(--space-12) var(--space-8);
+  text-align: center;
+}
+.section-title {
+  margin-bottom: var(--space-2);
+}
+.section-sub {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-6);
+}
+.demo-container {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+  border: 1px solid var(--border-glow);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.6);
+}
+.demo-iframe {
+  width: 100%;
+  height: 500px;
+  border: none;
+}
+.demo-direct-link {
+  display: block;
+  margin-top: var(--space-4);
+  color: var(--accent-2);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* ============================================================
+   FEATURES – zigzag layout, only real features from app.html
+   ============================================================ */
+.features {
+  padding: var(--space-12) var(--space-8);
+}
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+.feature-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
+  align-items: center;
+}
+.feature-item.reverse {
+  direction: rtl;
+}
+.feature-item.reverse .feature-text {
+  direction: ltr;
+}
+.feature-visual {
+  width: 100%;
+  aspect-ratio: 1;
+  background: radial-gradient(circle at center, rgba(var(--accent-2-rgb), 0.1) 0%, transparent 70%);
+  border: 1px solid var(--border-glow);
+  border-radius: 50%;
+}
+.feature-text h3 {
+  color: var(--accent-1);
+}
+.feature-text p {
+  color: var(--text-secondary);
+  margin-top: var(--space-2);
+}
+
+/* ============================================================
+   HOW IT WORKS – max 3 steps
+   ============================================================ */
+.how-it-works {
+  padding: var(--space-12) var(--space-8);
+  text-align: center;
+}
+.steps {
+  display: flex;
+  gap: var(--space-8);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: var(--space-8);
+}
+.step {
+  flex: 1;
+  min-width: 220px;
+  max-width: 300px;
+}
+.step-number {
+  display: block;
+  width: 48px;
+  height: 48px;
+  background: var(--accent-2);
+  color: var(--bg);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--scale-heading);
+  line-height: 48px;
+  margin: 0 auto var(--space-4);
+}
+.step h3 {
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   PRICING – real tiers, value‑metric aligned
+   ============================================================ */
+.pricing {
+  padding: var(--space-12) var(--space-8);
+  text-align: center;
+}
+.pricing-cards {
+  display: flex;
+  gap: var(--space-8);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: var(--space-8);
+}
+.pricing-card {
+  background: var(--bg-surface);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 24px;
+  padding: var(--space-8) var(--space-6);
+  width: 300px;
+  position: relative;
+  transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
+}
+.pricing-card.featured {
+  border-color: var(--accent-1);
+  box-shadow: 0 0 30px rgba(var(--accent-1-rgb), 0.15);
+}
+.pricing-card:hover {
+  transform: translateY(-8px);
+}
+.badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent-1);
+  padding: 4px 16px;
+  border-radius: 100px;
+  color: var(--text-primary);
+}
+.price {
+  font-family: var(--font-display);
+  font-size: var(--scale-heading);
+  font-weight: 800;
+  color: var(--accent-2);
+  margin: var(--space-4) 0;
+}
+.price span {
+  font-size: var(--scale-body);
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+.pricing-card ul {
+  list-style: none;
+  margin: var(--space-6) 0;
+  color: var(--text-secondary);
+}
+.pricing-card li {
+  padding: var(--space-1) 0;
+}
+.pricing-card .cta {
+  width: 100%;
+  text-align: center;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer {
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--scale-label);
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+/* ============================================================
+   RESPONSIVE – mobile collapses, zero horizontal overflow
+   ============================================================ */
+@media (max-width: 768px) {
+  .hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .hero-preview {
+    max-width: 300px;
+    margin-top: var(--space-8);
+  }
+  .feature-item,
+  .feature-item.reverse {
+    grid-template-columns: 1fr;
+    direction: ltr;
+  }
+  .feature-visual {
+    display: none;
+  }
+  .demo-iframe {
+    height: 350px;
+  }
+}
+
+/* ============================================================
+   ANIMATIONS – Staggered reveal via Intersection Observer + page load
+   .reveal starts hidden, .visible triggers transition
+   ============================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s var(--ease-spring), transform 0.6s var(--ease-spring);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
